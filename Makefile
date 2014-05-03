@@ -3,14 +3,14 @@
 all: setup install
 
 .PHONY: setup
-setup: uv6swre.zip
+setup: _refs/src/simh.trailing-edge.com/kits/uv6swre.zip
 
-uv6swre.zip:
-	curl -Os http://simh.trailing-edge.com/kits/uv6swre.zip
+_refs/src/simh.trailing-edge.com/kits/uv6swre.zip:
+	cd _refs/src/simh.trailing-edge.com/kits/;curl -Os http://simh.trailing-edge.com/kits/uv6swre.zip
 
 .PHONY: install
-install: uv6swre.zip
-	unzip uv6swre.zip
+install: _refs/src/simh.trailing-edge.com/kits/uv6swre.zip
+	unzip _refs/src/simh.trailing-edge.com/kits/uv6swre.zip
 
 .PHONY: boot
 boot:
