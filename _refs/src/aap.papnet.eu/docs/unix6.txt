@@ -1,0 +1,236 @@
+This is a guide to installing UNIX sixth edition in the simh pdp-11 emulator.
+Besides the pdp11 emulator you only need the v6 distribution tape:
+http://www.ba-stuttgart.de/~helbig/os/v6/dist.tap
+
+___________________________________
+1. Step: Installing the binary disc
+___________________________________
+
+There are 3 RK05 discs installable from the magtape:
+-UNIX sixth edition including kernel source code
+-Source code for the remaining programs
+-Manuals
+
+To install the binary distribution start pdp11:
+
+PDP-11 simulator V3.7-0
+sim>
+
+Now we enter:
+sim>set cpu 11/40
+Disabling XQ
+sim>set tto 7b
+sim>att tm0 dist.tap
+sim>set tm0 locked
+sim>att rk0 v6root
+RK: creating new file
+sim>att rk1 v6src
+RK: creating new file
+sim>att rk2 v6doc
+RK: creating new file
+
+This mounts the magtape and creates three RK05 discs.
+
+
+Now type:
+sim>d 100000 012700
+sim>d 100002 172526
+sim>d 100004 010040
+sim>d 100006 012740
+sim>d 100010 060003
+sim>d 100012 000777
+sim>d pc 100000
+sim>go
+
+And stop the simulation by pressing Ctrl+E.
+You just keyed in and executed some machine instructions at 100000.
+Set the PC to 0 and execute by typing: 
+sim>d pc 0
+sim>go
+
+You can now copy disc 1 from magtape to rk0.
+You should see a '=':
+=tmrk
+disk offset
+0
+tape offset
+100
+count
+1
+=tmrk
+disk offset
+1
+tape offset
+101
+count
+3999
+=
+
+Exit with Ctrl+E. We will copy the rest to discs when we are running UNIX.
+
+_____________________
+Step 2: Booting UNIX:
+_____________________
+
+To boot UNIX, key in and execute at 100000:
+sim> d 100000 012700
+sim> d 100002 177414
+sim> d 100004 005040 
+sim> d 100006 005040
+sim> d 100010 010040
+sim> d 100012 012740
+sim> d 100014 000005
+sim> d 100016 105610
+sim> d 100020 002376
+sim> d 100022 005007
+sim> d pc 100000
+sim> go
+
+You should now see an '@', type "rkunix" and "root":
+@rkunix
+
+login: root
+#
+
+_____________________________
+Step 3: Creating device files
+_____________________________
+
+Welcome to UNIX, now we want to to create special files for the other RK05 discs and the magtape.
+
+# chdir /usr/sys/conf
+# cc mkconf.c
+# mv a.out mkconf
+# mkconf
+tm
+rk
+done
+#
+
+This creates l.s and c.c which we will need in order to create the device files.
+Look at c.c (cat c.c) and you will see that there are two tables.
+The first is for the block devices, the second for the character devices.
+To create, say, /dev/rk0 (a block device) we use this command:
+
+# /etc/mknod /dev/rk0 b 0 0
+
+Since we want to create a block device (that's what the b stands for),
+we consult the first table in c.c.
+The first zero means that we create an rk device,
+the second tells that the device we're creating is the first of it's kind.
+When you look at the first table in c.c you will see a comment in the first line, /* rk */, this is why the first number is 0. 
+For tm we are going to use 3, just count lines starting with zero.
+The second 0 tells mknod that we want the first RK05 disc.
+
+To create a character device for rk0 type:
+
+# /etc/mknod /dev/rrk0 c 9 0
+
+Now that we create a character device the first table of c.c
+does no longer apply and we must use the second.
+Here the rk device has the identifier 9.
+Furthermore we have to use c rather than b to tell mknod we
+want a character device.
+
+Creating rk1 and rk2, and rrk1 and rrk2 respectively should not be a problem now:
+# /etc/mknod /dev/rk1 b 0 1
+# /etc/mknod /dev/rrk1 c 9 1
+# /etc/mknod /dev/rk2 b 0 2
+# /etc/mknod /dev/rrk2 c 9 2
+
+To create mt0 and rmt0 we'll just lookup everything we need in the tables.
+This is what we end up with:
+# /etc/mknod /dev/mt0 b 3 0
+# /etc/mknod /dev/rmt0 c 12 0
+
+_________________________________
+Step 4: Copy discs and mount them
+_________________________________
+
+Finally we can copy the source and doc discs from magtape:
+# dd if=/dev/mt0 of=/dev/rk1 count=4000 skip=4100
+# dd if=/dev/mt0 of=/dev/rk2 count=4000 skip=8100
+
+You can now mount them to /usr/source and /usr/doc (needs to be created):
+# /etc/mount /dev/rk1 /usr/source
+# mkdir /usr/doc
+# /etc/mount /dev/rk2 /usr/doc
+
+If you want the discs to be mounted at startup follow these instructions:
+# ed /etc/rc
+28
+2
+/etc/update
+a
+/etc/mount /dev/rk1 /usr/source
+/etc/mount /dev/rk2 /usr/doc
+.
+w
+89
+q
+#
+
+________________
+Additional help:
+________________
+_______________________
+Adding the "cd" command
+_______________________
+
+You probably noticed that UNIX sixth edition doesn't have cd so you have to use chdir every time, this is pretty annoying so we are going to fix that:
+# chdir /usr/source/s2
+# ed sh.c
+11594
+561
+                if(equal(cp1, "chdir")) {
+s/equal(cp1, "chdir")/equal(cp1, "chdir") || equal(cp1, "cd")/p
+                if(equal(cp1, "chdir") || equal(cp1, "cd")) {
+w mysh.c
+11614
+q
+# cc mysh.c
+# mv /bin/sh /bin/sh_org
+# mv a.out /bin/sh
+# sh
+
+Now you can use cd and chdir to change you working directory.
+
+______________________
+Recompiling the Kernel
+______________________
+
+You may want to recompile your kernel. To accomplish this cd to /usr/sys:
+# cd /usr/sys
+and execute run
+# sh run
+
+This will recompile you kernel and install it.
+You could use your preferred kernel (rkunix for simh) as kind of a default kernel with:
+# cd /
+# cp rkunix unix
+
+You can now boot UNIX from the '@' Bootprompt with "@unix".
+
+_________________________
+Writing a simh batch file
+_________________________
+
+To boot unix with "pdp11 unix.sim" we create a file with all simh commands that boot UNIX:
+unix.sim:
+set cpu 11/40
+set tto 7b
+att rk0 v6root
+att rk1 v6src
+att rk2 v6doc
+boot rk0
+
+To exit use Ctrl+E and quit.
+
+
+
+I hope I could help you with this great System :)
+kotzkroete@gmail.com
+
+
+
+
