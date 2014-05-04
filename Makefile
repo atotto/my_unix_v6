@@ -14,7 +14,7 @@ install: _refs/src/simh.trailing-edge.com/kits/uv6swre.zip
 
 .PHONY: boot
 boot:
-	pdp11 boot.conf
+	pdp11 bootstrap
 
 .PHONY: clean
 clean:
