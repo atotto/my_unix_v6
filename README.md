@@ -1,4 +1,6 @@
-# unix v6 を動かしてみる
+# unix v6 勉強用
+
+## unix v6 をシミュレータで動かす
 
 手元の環境：
 
@@ -12,9 +14,8 @@ ubuntuなら `$ sudo apt-get install simh` で。
 
 これで pdp11 コマンドが利用できるようになる。
 
-## unix v6
 
-[http://simh.trailing-edge.com/software.html](Software Kits) から [http://simh.trailing-edge.com/kits/uv6swre.zip](UNIX V6) をダウンロードしておく。
+[Software Kits](http://simh.trailing-edge.com/software.html) から [UNIX V6](http://simh.trailing-edge.com/kits/uv6swre.zip) をダウンロードしておく。
 
 ```
 $ curl -Os http://simh.trailing-edge.com/kits/uv6swre.zip
